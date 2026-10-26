@@ -585,6 +585,28 @@ class TestController:
 
         assert popup_size == expected_popup_size
 
+    def test_show_typing_notification_stop_after_read(
+        self, mocker: MockerFixture, controller: Controller
+    ) -> None:
+        set_footer_text = mocker.patch(VIEW + ".set_footer_text")
+        mocker.patch(MODULE + ".time.sleep")
+        # A stop event replaces the dictionary after the first read.
+        mocker.patch.object(
+            Controller,
+            "active_conversation_info",
+            new_callable=mocker.PropertyMock,
+            create=True,
+            side_effect=[{"sender_name": "hamlet"}, {}],
+        )
+
+        controller.show_typing_notification()
+
+        assert set_footer_text.call_args_list == [
+            mocker.call([("footer_contrast", " hamlet "), " is typing"]),
+            mocker.call(),
+        ]
+        assert controller.is_typing_notification_in_progress is False
+
     @pytest.mark.parametrize(
         "active_conversation_info",
         [
